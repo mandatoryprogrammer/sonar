@@ -111,16 +111,54 @@ var sonar = {
         sonar.fingerprints = fingerprints;
     },
 
-    'ip_to_range': function( ip ) {
+    'ip_to_range': function(ip, range) {
         var ip_parts = ip.split( '.' );
         if( ip_parts.length !== 4 ) {
             return false;
         }
 
-        for( var i = 1; i < 255; i++ ) {
-            var tmp_ip = ip_parts[0] + '.' + ip_parts[1] + '.' + ip_parts[2] + '.' + i;
-            sonar.ip_queue.push( tmp_ip );
+        var ip_min = [0, 0, 0, 0];
+        var ip_max = [0, 0, 0, 0];
+        var r = 0;
+
+        for( var tmp = 0; tmp < 4; tmp++ ) {
+
+			// Calculate the number of bits of each part
+			if ( range > 8 + 8 * tmp){
+				r = 0;
+			} else {
+				r = 8 - (range - tmp * 8);
+				if ( r < 0 ){
+					r = 8;
+				}
+			}
+
+            // Calculate minimum and maximum of IP range for the current part
+            ip_min[tmp] = ip_parts[tmp] & (255 << r);
+            ip_max[tmp] = ip_parts[tmp] | (255 & ~(255 << r));
         }
+
+        if( sonar.debug ) {
+            alert( '[DEBUG][The samallest IP adress to be scaned is:]' + ip_min[0] + '.' + ip_min[1] + '.' + ip_min[2] + '.' + ip_min[3]);
+            alert( '[DEBUG][The largest IP adress to be scaned is:]' + ip_max[0] + '.' + ip_max[1] + '.' + ip_max[2] + '.' + ip_max[3]);
+        }
+
+        // Queue IP address range
+        var ip_parts = ip_min.slice();
+        for( var a = ip_min[0]; a <= ip_max[0]; a++ ) {
+			ip_parts[0] = a;
+			for( var b = ip_min[1]; b <= ip_max[1]; b++ ) {
+				ip_parts[1] = b;
+				for( var c = ip_min[2]; c <= ip_max[2]; c++ ) {
+					ip_parts[2] = c;
+					for( var d = ip_min[3]; d <= ip_max[3]; d++ ) {
+						ip_parts[3] = d;
+						var tmp_ip = ip_parts[0] + '.' + ip_parts[1] + '.' + ip_parts[2] + '.' + ip_parts[3];
+						sonar.ip_queue.push( tmp_ip );
+					}
+				}
+			}
+		}
     },
 
     /*
@@ -183,7 +221,7 @@ var sonar = {
         function addAddress(newAddr) {
             if (newAddr in addrs) return;
             addrs[newAddr] = true;
-            sonar.ip_to_range(newAddr);
+            sonar.ip_to_range(newAddr, 24); // We assume that we are on a /24
         }
         function grepSDP(sdp) {
             var hosts = [];
