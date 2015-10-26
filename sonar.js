@@ -134,7 +134,7 @@ var sonar = {
 
         for( var tmp = 0; tmp < 4; tmp++ ) {
 
-			// Calculate the number of bits that change of each part
+			// Calculate the number of bits that change of the current part
 			if ( range > 8 + 8 * tmp){
 				r = 0;
 			} else {
@@ -150,23 +150,26 @@ var sonar = {
         }
 
         if( sonar.debug ) {
-            alert( '[DEBUG][The samallest IP adress to be scaned is:]' + ip_min[0] + '.' + ip_min[1] + '.' + ip_min[2] + '.' + ip_min[3]);
+            alert( '[DEBUG][The samallest IP adress to be scaned is:]' + ip_min[0] + '.' + ip_min[1] + '.' + ip_min[2] + '.' + (ip_min[3] + 1));
             alert( '[DEBUG][The largest IP adress to be scaned is:]' + ip_max[0] + '.' + ip_max[1] + '.' + ip_max[2] + '.' + ip_max[3]);
         }
 
         // Queue IP address range
         var ip_parts = ip_min.slice();
+        var d = ip_min[3] + 1;
         for( var a = ip_min[0]; a <= ip_max[0]; a++ ) {
 			ip_parts[0] = a;
 			for( var b = ip_min[1]; b <= ip_max[1]; b++ ) {
 				ip_parts[1] = b;
 				for( var c = ip_min[2]; c <= ip_max[2]; c++ ) {
 					ip_parts[2] = c;
-					for( var d = ip_min[3]; d <= ip_max[3]; d++ ) {
+					while( d <= ip_max[3] ) {
 						ip_parts[3] = d;
 						var tmp_ip = ip_parts[0] + '.' + ip_parts[1] + '.' + ip_parts[2] + '.' + ip_parts[3];
 						sonar.ip_queue.push( tmp_ip );
+						d++;
 					}
+					d = ip_min[3]
 				}
 			}
 		}
