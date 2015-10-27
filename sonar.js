@@ -155,29 +155,25 @@ var sonar = {
         }
 
         // Queue IP address range
-        var d = ip_min[3] + 1;
-        for( var a = ip_min[0]; a <= ip_max[0]; a++ ) {
-			ip_parts[0] = a;
-			if ( a == ip_max[0] ){ // Check if we are approaching the end of the subnet
+        ip_parts[3] = ip_min[3] + 1;
+        for( ip_parts[0] = ip_min[0]; ip_parts[0] <= ip_max[0]; ip_parts[0]++ ) {
+			if ( ip_parts[0] == ip_max[0] ){ // Check if we are approaching the end of the subnet
 				var ae = 1;
 			}
-			for( var b = ip_min[1]; b <= ip_max[1]; b++ ) {
-				ip_parts[1] = b;
-				if ( ae == 1 && b == ip_max[1] ){
+			for( ip_parts[1] = ip_min[1]; ip_parts[1] <= ip_max[1]; ip_parts[1]++ ) {
+				if ( ae == 1 && ip_parts[1] == ip_max[1] ){
 					var be = 1;
 				}
-				for( var c = ip_min[2]; c <= ip_max[2]; c++ ) {
-					ip_parts[2] = c;
-					if ( be == 1 && c == ip_max[2] ){
+				for( ip_parts[2] = ip_min[2]; ip_parts[2] <= ip_max[2]; ip_parts[2]++ ) {
+					if ( be == 1 && ip_parts[2] == ip_max[2] ){
 						ip_max[3]--; // Prevent the broadcast address from getting queued
 					}
-					while( d <= ip_max[3] ) {
-						ip_parts[3] = d;
+					while( ip_parts[3] <= ip_max[3] ) {
 						var tmp_ip = ip_parts[0] + '.' + ip_parts[1] + '.' + ip_parts[2] + '.' + ip_parts[3];
 						sonar.ip_queue.push( tmp_ip );
-						d++;
+						ip_parts[3]++;
 					}
-					d = ip_min[3]
+					ip_parts[3] = ip_min[3];
 				}
 			}
 		}
