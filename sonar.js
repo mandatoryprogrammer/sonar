@@ -139,9 +139,6 @@ var sonar = {
 				r = 0;
 			} else {
 				r = 8 - (range - tmp * 8);
-				if ( r < 0 ){
-					r = 8;
-				}
 			}
 
             // Calculate minimum and maximum of IP range for the current part
