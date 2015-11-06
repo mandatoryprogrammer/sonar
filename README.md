@@ -3,7 +3,7 @@ A framework for identifying and launching exploits against internal network host
 
 ## How does it work?
 Upon loading the sonar.js payload in a modern web browser the following will happen:
-* sonar.js will use WebRTC to enumerate what internal IPs the user loading the payload has.
+* sonar.js will use WebRTC to enumerate what internal IPs the user loading the payload has, assuming a /24 subnet size unless a target subnet or subnet size has been specified.
 * sonar.js then attempts to find live hosts on the internal network via WebSockets.
 * If a live host is found, sonar.js begins to attempt to fingerprint the host by linking to it via ```<img src="x">``` and ```<link rel="stylesheet" type="text/css" href="x">``` and hooking the ```onload``` event. If the expected resources load successfully it will trigger the pre-set JavaScript callback to start the user-supplied exploit.
 
