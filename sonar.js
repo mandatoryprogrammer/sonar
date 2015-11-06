@@ -149,12 +149,12 @@ var sonar = {
 
         for( var tmp = 0; tmp < 4; tmp++ ) {
 
-			// Calculate the number of bits that change of the current part
-			if ( range > 8 + 8 * tmp){
-				r = 0;
-			} else {
-				r = 8 - (range - tmp * 8);
-			}
+            // Calculate the number of bits that change of the current part
+            if ( range > 8 + 8 * tmp){
+                r = 0;
+            } else {
+                r = 8 - (range - tmp * 8);
+            }
 
             // Calculate minimum and maximum of IP range for the current part
             ip_min[tmp] = ip_parts[tmp] & (255 << r);
@@ -169,26 +169,26 @@ var sonar = {
         // Queue IP address range
         ip_parts[3] = ip_min[3] + 1;
         for( ip_parts[0] = ip_min[0]; ip_parts[0] <= ip_max[0]; ip_parts[0]++ ) {
-			if ( ip_parts[0] == ip_max[0] ){ // Check if we are approaching the end of the subnet
-				var ae = 1;
-			}
-			for( ip_parts[1] = ip_min[1]; ip_parts[1] <= ip_max[1]; ip_parts[1]++ ) {
-				if ( ae == 1 && ip_parts[1] == ip_max[1] ){
-					var be = 1;
-				}
-				for( ip_parts[2] = ip_min[2]; ip_parts[2] <= ip_max[2]; ip_parts[2]++ ) {
-					if ( be == 1 && ip_parts[2] == ip_max[2] ){
-						ip_max[3]--; // Prevent the broadcast address from getting queued
-					}
-					while( ip_parts[3] <= ip_max[3] ) {
-						var tmp_ip = ip_parts[0] + '.' + ip_parts[1] + '.' + ip_parts[2] + '.' + ip_parts[3];
-						sonar.ip_queue.push( tmp_ip );
-						ip_parts[3]++;
-					}
-					ip_parts[3] = ip_min[3];
-				}
-			}
-		}
+            if ( ip_parts[0] == ip_max[0] ){ // Check if we are approaching the end of the subnet
+                var ae = 1;
+            }
+            for( ip_parts[1] = ip_min[1]; ip_parts[1] <= ip_max[1]; ip_parts[1]++ ) {
+                if ( ae == 1 && ip_parts[1] == ip_max[1] ){
+                    var be = 1;
+                }
+                for( ip_parts[2] = ip_min[2]; ip_parts[2] <= ip_max[2]; ip_parts[2]++ ) {
+                    if ( be == 1 && ip_parts[2] == ip_max[2] ){
+                        ip_max[3]--; // Prevent the broadcast address from getting queued
+                    }
+                    while( ip_parts[3] <= ip_max[3] ) {
+                        var tmp_ip = ip_parts[0] + '.' + ip_parts[1] + '.' + ip_parts[2] + '.' + ip_parts[3];
+                        sonar.ip_queue.push( tmp_ip );
+                        ip_parts[3]++;
+                    }
+                    ip_parts[3] = ip_min[3];
+                }
+            }
+        }
     },
 
     /*
