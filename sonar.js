@@ -26,7 +26,16 @@ var sonar = {
         }
 
         // Separate IP and range, target[0] is the IP and target[1] is the range
+        // If the range is not specified, we assume that only one IP should be scaned
         target = target.split( '/' );
+        if( target[1] === undefined ) {
+            target[1] = 32;
+        }
+
+        // Check the specified IP range, /31 subnets are excluded because those only have reserved and broadcast addresses
+        if( target[1] < 0 || target[1] > 32 || target[1] == 31 ) {
+            return false;
+        }
 
         // This calls sonar.process_queue() every 
         setInterval( function() {
@@ -36,7 +45,7 @@ var sonar = {
         if( target[0] == "" ) {
             sonar.enumerate_local_ips( target[1] );
         } else{
-			sonar.ip_to_range( target[0], target[1] );
+            sonar.ip_to_range( target[0], target[1] );
         }
     },
 
@@ -126,6 +135,12 @@ var sonar = {
         var ip_parts = ip.split( '.' );
         if( ip_parts.length !== 4 ) {
             return false;
+        }
+
+        // If we're only going to scan one IP, queue it without calculating the range
+        if ( range == 32 ){
+            sonar.ip_queue.push( ip );
+            return;
         }
 
         var ip_min = [0, 0, 0, 0];
